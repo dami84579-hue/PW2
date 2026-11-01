@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Inventario - Dashboard Profesional & Monitor REST</title>
+  <style>
+    :root {
+      --bg: #0b1120;
+      --card-bg: #1e293b;
+      --card-subtle: #151f32;
+      --border: #334155;
+      --border-hover: #475569;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --success-hover: #059669;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --purple: #8b5cf6;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 1.5rem;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* HEADER Y HERO */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .header-titles h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .header-titles p {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      margin-top: 0.2rem;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.45rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--warning);
+      transition: all 0.3s ease;
+    }
+
+    .status-dot.connected {
+      background-color: var(--success);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.7);
+    }
+
+    .status-dot.disconnected {
+      background-color: var(--danger);
+    }
+
+    /* METRIC STATS CARDS */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--border);
+    }
+
+    .stat-card.blue::before { background: var(--primary); }
+    .stat-card.green::before { background: var(--success); }
+    .stat-card.purple::before { background: var(--purple); }
+    .stat-card.orange::before { background: var(--warning); }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--text);
+    }
+
+    /* ACTIONS TOOLBAR */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      align-items: center;
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+    }
+
+    .toolbar-left, .toolbar-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    /* BOTONES */
+    .btn {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.5rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--border-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-sm {
+      padding: 0.28rem 0.6rem;
+      font-size: 0.75rem;
+    }
+
+    .btn-primary { background: var(--primary); border-color: var(--primary-hover); }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: var(--success); border-color: var(--success-hover); }
+    .btn-success:hover { background: var(--success-hover); }
+    .btn-danger { background: var(--danger); border-color: var(--danger-hover); }
+    .btn-danger:hover { background: var(--danger-hover); }
+    .btn-warning { background: #b45309; border-color: var(--warning); }
+    .btn-warning:hover { background: #92400e; }
+    .btn-secondary { background: transparent; border-color: var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+
+    /* LAYOUT PRINCIPAL */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1080px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* FORMULARIO INTELIGENTE UNIFICADO */
+    .smart-form-container {
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+      transition: border-color 0.2s;
+    }
+
+    .smart-form-container.editing {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 1px var(--purple);
+    }
+
+    .form-header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      margin-bottom: 0.8rem;
+    }
+
+    .badge-create-mode {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .badge-edit-mode {
+      background: rgba(139, 92, 246, 0.2);
+      color: #c084fc;
+      border: 1px solid rgba(139, 92, 246, 0.4);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.88rem;
+      transition: all 0.2s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-top: 0.85rem;
+    }
+
+    /* TABLA DE INVENTARIO Y FILTRO */
+    .table-controls {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .search-input {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      color: var(--text);
+      font-size: 0.85rem;
+      flex: 1;
+      max-width: 320px;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      max-height: 380px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    th {
+      text-align: left;
+      padding: 0.65rem 0.75rem;
+      background: var(--card-subtle);
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.65rem 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      vertical-align: middle;
+    }
+
+    tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    tr.active-editing {
+      background: rgba(139, 92, 246, 0.12) !important;
+      border-left: 3px solid var(--purple);
+    }
+
+    .stock-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .stock-in { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .stock-low { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .stock-out { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+    /* LABORATORIO DE RÚBRICA Y CASOS DE PRUEBA */
+    .lab-box {
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .lab-title {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .lab-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    /* CAJA DE ÚLTIMA RESPUESTA HTTP */
+    .http-viewer {
+      background: #070a13;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+    }
+
+    .http-viewer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f172a;
+      padding: 0.5rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+    }
+
+    .http-pill {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .pill-2xx { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #059669; }
+    .pill-4xx { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #dc2626; }
+    .pill-5xx { background: rgba(220, 38, 38, 0.3); color: #fca5a5; border: 1px solid #b91c1c; }
+    .pill-idle { background: #334155; color: var(--text-muted); }
+
+    .json-code {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #38bdf8;
+      padding: 0.75rem 1rem;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* MONITOR WEBSOCKET */
+    .events-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+
+    .event-card {
+      background: #090d16;
+      border-left: 4px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem 0.85rem;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .event-card.CREADO { border-left-color: var(--success); }
+    .event-card.ACTUALIZADO { border-left-color: var(--primary); }
+    .event-card.ELIMINADO { border-left-color: var(--danger); }
+
+    .event-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .event-badge {
+      font-size: 0.7rem;
+      font-weight: 800;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-CREADO { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+    .badge-ACTUALIZADO { background: rgba(59, 130, 246, 0.2); color: var(--primary); }
+    .badge-ELIMINADO { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+    .event-time {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    .event-body {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 0.4rem 0.6rem;
+      border-radius: 4px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      color: var(--text-dim);
+      font-style: italic;
+      font-size: 0.88rem;
+    }
+
+    /* TOAST NOTIFICATIONS */
+    #toast-container {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      pointer-events: auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      animation: slideIn 0.3s ease-out;
+      max-width: 380px;
+    }
+
+    .toast-success { border-left: 4px solid var(--success); }
+    .toast-error { border-left: 4px solid var(--danger); }
+    .toast-warning { border-left: 4px solid var(--warning); }
+    .toast-info { border-left: 4px solid var(--primary); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- HEADER -->
+    <header>
+      <div class="header-titles">
+        <h1>📦 Sistema de Inventario & Monitor REST</h1>
+        <p>Arquitectura en capas, programación funcional, persistencia SQLite3 y WebSockets en tiempo real</p>
+      </div>
+      <div class="status-badge">
+        <span id="socket-dot" class="status-dot"></span>
+        <span id="socket-status">Conectando...</span>
+      </div>
+    </header>
+
+    <!-- TARJETAS DE MÉTRICAS GLOBALES (KPIs) -->
+    <div class="stats-grid">
+      <div class="stat-card blue">
+        <span class="stat-label">Total Productos</span>
+        <span id="stat-total-items" class="stat-value">0</span>
+      </div>
+      <div class="stat-card green">
+        <span class="stat-label">Unidades en Stock</span>
+        <span id="stat-total-stock" class="stat-value">0</span>
+      </div>
+      <div class="stat-card purple">
+        <span class="stat-label">Valor de Inventario</span>
+        <span id="stat-total-value" class="stat-value">$0.00</span>
+      </div>
+      <div class="stat-card orange">
+        <span class="stat-label">Eventos WebSocket</span>
+        <span id="stat-total-events" class="stat-value">0</span>
+      </div>
+    </div>
+
+    <!-- BARRA DE ACCIONES Y UTILIDADES -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button id="btn-seed" class="btn btn-success">⚡ Cargar 3 Productos Demo</button>
+        <button id="btn-refresh-data" class="btn btn-secondary">🔄 Refrescar BD</button>
+      </div>
+      <div class="toolbar-right">
+        <a href="/api/items/export?format=csv" class="btn btn-secondary">📥 Exportar CSV</a>
+        <a href="/api/items/export?format=json" class="btn btn-secondary">📥 Exportar JSON</a>
+        <a href="/api/items/session-audit" target="_blank" class="btn btn-secondary">🔍 Auditoría de Sesión</a>
+      </div>
+    </div>
+
+    <!-- GRID PRINCIPAL -->
+    <div class="main-grid">
+
+      <!-- COLUMNA IZQUIERDA: GESTIÓN DE PRODUCTOS (FORMULARIO UNIFICADO + TABLA) -->
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📝 Gestión de Productos</span>
+            <span id="form-mode-badge" class="form-header-badge badge-create-mode">Modo: Nuevo Producto</span>
+          </div>
+
+          <!-- FORMULARIO INTELIGENTE UNIFICADO (Sin duplicidad) -->
+          <div id="smart-form-card" class="smart-form-container">
+            <form id="item-form">
+              <input type="hidden" id="edit-id">
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="sku">SKU (Código Único)</label>
+                  <input type="text" id="sku" placeholder="Ej: LAP-DELL-01" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label for="nombre">Nombre del Producto</label>
+                  <input type="text" id="nombre" placeholder="Ej: Laptop Gamer 16GB" required autocomplete="off">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="stock">Stock Disponible (>= 0)</label>
+                  <input type="number" id="stock" placeholder="10" min="0" required>
+                </div>
+                <div class="form-group">
+                  <label for="precio">Precio Unitario ($ > 0)</label>
+                  <input type="number" id="precio" step="0.01" placeholder="899.99" min="0.01" required>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" id="btn-submit-form" class="btn btn-primary" style="flex: 1;">
+                  ➕ Guardar Producto (POST)
+                </button>
+                <button type="button" id="btn-cancel-edit" class="btn btn-secondary" style="display: none;">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- TABLA DE INVENTARIO CON FILTRO EN VIVO -->
+          <div class="table-controls">
+            <input type="text" id="search-input" class="search-input" placeholder="🔍 Buscar por nombre o SKU...">
+            <span id="table-count" style="font-size: 0.8rem; color: var(--text-muted); align-self: center;">0 registros</span>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 50px;">ID</th>
+                  <th>SKU</th>
+                  <th>Nombre</th>
+                  <th>Stock</th>
+                  <th>Precio</th>
+                  <th style="text-align: right; width: 150px;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-tbody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Cargando inventario...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- COLUMNA DERECHA: LABORATORIO RÚBRICA + RESPUESTA HTTP + SOCKETS -->
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        
+        <!-- CARD: LABORATORIO DE VALIDACIONES DE LA RÚBRICA -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🧪 Laboratorio de Pruebas (Rúbrica)</span>
+          </div>
+
+          <div class="lab-box">
+            <div class="lab-title">Casos de Validación con 1 Clic:</div>
+            <div class="lab-buttons">
+              <button type="button" id="btn-test-400" class="btn btn-warning btn-sm">
+                ⚠️ Probar Error 400 (Datos Inválidos)
+              </button>
+              <button type="button" id="btn-test-409" class="btn btn-danger btn-sm">
+                ⛔ Probar Conflicto 409 (SKU Duplicado)
+              </button>
+            </div>
+          </div>
+
+          <!-- VISOR DE RESPUESTA HTTP -->
+          <div class="http-viewer">
+            <div class="http-viewer-bar">
+              <span id="http-endpoint-text" style="font-weight: 600; color: var(--text-muted);">Última Petición: En reposo</span>
+              <span id="http-status-pill" class="http-pill pill-idle">--</span>
+            </div>
+            <pre id="http-json-output" class="json-code">// El JSON y código de estado devueltos por la API se proyectarán aquí...</pre>
+          </div>
+        </div>
+
+        <!-- CARD: EVENTOS EN TIEMPO REAL (SOCKET.IO) -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📡 Registro en Tiempo Real (Socket.io)</span>
+            <button id="btn-clear-events" class="btn btn-secondary btn-sm">Limpiar</button>
+          </div>
+
+          <div id="events-empty" class="empty-state">
+            Esperando cambios en el inventario... Inserte, modifique o elimine un ítem para ver las emisiones reactivas.
+          </div>
+          <ul id="events-list" class="events-list"></ul>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CONTENEDOR DE TOAST NOTIFICATIONS -->
+  <div id="toast-container"></div>
+
+  <!-- CLIENTE SOCKET.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // ESTADO DE LA APLICACIÓN
+    let inventoryState = [];
+    let isEditing = false;
+    let eventCounter = 0;
+
+    // ELEMENTOS DOM
+    const socket = io();
+    const socketDot = document.getElementById('socket-dot');
+    const socketStatus = document.getElementById('socket-status');
+
+    // Estadísticas
+    const statTotalItems = document.getElementById('stat-total-items');
+    const statTotalStock = document.getElementById('stat-total-stock');
+    const statTotalValue = document.getElementById('stat-total-value');
+    const statTotalEvents = document.getElementById('stat-total-events');
+
+    // Formulario unificado
+    const itemForm = document.getElementById('item-form');
+    const smartFormCard = document.getElementById('smart-form-card');
+    const formModeBadge = document.getElementById('form-mode-badge');
+    const editIdInput = document.getElementById('edit-id');
+    const skuInput = document.getElementById('sku');
+    const nombreInput = document.getElementById('nombre');
+    const stockInput = document.getElementById('stock');
+    const precioInput = document.getElementById('precio');
+    const btnSubmitForm = document.getElementById('btn-submit-form');
+    const btnCancelEdit = document.getElementById('btn-cancel-edit');
+
+    // Tabla y búsqueda
+    const inventoryTbody = document.getElementById('inventory-tbody');
+    const searchInput = document.getElementById('search-input');
+    const tableCount = document.getElementById('table-count');
+    const btnRefreshData = document.getElementById('btn-refresh-data');
+    const btnSeed = document.getElementById('btn-seed');
+
+    // Visor HTTP
+    const httpEndpointText = document.getElementById('http-endpoint-text');
+    const httpStatusPill = document.getElementById('http-status-pill');
+    const httpJsonOutput = document.getElementById('http-json-output');
+
+    // Botones de rúbrica
+    const btnTest400 = document.getElementById('btn-test-400');
+    const btnTest409 = document.getElementById('btn-test-409');
+
+    // Monitor Sockets
+    const eventsList = document.getElementById('events-list');
+    const eventsEmpty = document.getElementById('events-empty');
+    const btnClearEvents = document.getElementById('btn-clear-events');
+
+    // SISTEMA DE TOASTS
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      
+      const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+      };
+      
+      toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span><span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // VISOR DE RESPUESTAS HTTP
+    function displayHttpResponse(method, endpoint, status, data) {
+      httpEndpointText.textContent = `${method} ${endpoint}`;
+      
+      const statusTextMap = {
+        200: '200 Correcto (OK)',
+        201: '201 Creado Exitosamente',
+        400: '400 Solicitud Inválida',
+        404: '404 No Encontrado',
+        409: '409 Conflicto (SKU Duplicado)',
+        500: '500 Error de Servidor'
+      };
+
+      httpStatusPill.textContent = statusTextMap[status] || `${status} Estado`;
+      httpStatusPill.className = 'http-pill';
+
+      if (status >= 200 && status < 300) {
+        httpStatusPill.classList.add('pill-2xx');
+      } else if (status >= 400 && status < 500) {
+        httpStatusPill.classList.add('pill-4xx');
+      } else {
+        httpStatusPill.classList.add('pill-5xx');
+      }
+
+      httpJsonOutput.textContent = JSON.stringify(data, null, 2);
+    }
+
+    // ACTUALIZACIÓN DE ESTADÍSTICAS GLOBALES
+    function updateStats(items) {
+      statTotalItems.textContent = items.length;
+      
+      const totalUnits = items.reduce((acc, curr) => acc + (Number(curr.stock) || 0), 0);
+      statTotalStock.textContent = totalUnits.toLocaleString();
+
+      const totalVal = items.reduce((acc, curr) => acc + ((Number(curr.stock) || 0) * (Number(curr.precio) || 0)), 0);
+      statTotalValue.textContent = `$${totalVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      
+      statTotalEvents.textContent = eventCounter;
+    }
+
+    // CARGAR INVENTARIO DE LA API
+    async function loadInventory() {
+      try {
+        const res = await fetch('/api/items');
+        const json = await res.json();
+        inventoryState = json.datos || json.data || [];
+        renderTable();
+        updateStats(inventoryState);
+      } catch (err) {
+        showToast('Error al conectar con la base de datos: ' + err.message, 'error');
+      }
+    }
+
+    // RENDERIZAR TABLA CON FILTRO
+    function renderTable() {
+      const term = searchInput.value.toLowerCase().trim();
+      const filtered = inventoryState.filter(item => 
+        (item.nombre && item.nombre.toLowerCase().includes(term)) ||
+        (item.sku && item.sku.toLowerCase().includes(term))
+      );
+
+      tableCount.textContent = `${filtered.length} de ${inventoryState.length} productos`;
+
+      if (filtered.length === 0) {
+        inventoryTbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 2rem;">
+              ${inventoryState.length === 0 ? 'El inventario está vacío. Agrega uno o carga los demos.' : 'No se encontraron coincidencias.'}
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      inventoryTbody.innerHTML = filtered.map(item => {
+        let stockClass = 'stock-in';
+        let stockLabel = `${item.stock} uds.`;
+        if (item.stock === 0) {
+          stockClass = 'stock-out';
+          stockLabel = 'Agotado';
+        } else if (item.stock <= 5) {
+          stockClass = 'stock-low';
+          stockLabel = `${item.stock} (Bajo)`;
+        }
+
+        const isRowActive = isEditing && editIdInput.value == item.id;
+
+        return `
+          <tr class="${isRowActive ? 'active-editing' : ''}">
+            <td><strong>#${item.id}</strong></td>
+            <td><code style="color:#38bdf8;">${item.sku}</code></td>
+            <td style="font-weight: 600;">${item.nombre}</td>
+            <td><span class="stock-badge ${stockClass}">${stockLabel}</span></td>
+            <td>$${Number(item.precio).toFixed(2)}</td>
+            <td style="text-align: right;">
+              <button class="btn btn-secondary btn-sm" onclick="startEdit(${item.id})">✏️ Editar</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteItem(${item.id}, '${item.nombre.replace(/'/g, "\\'")}')">🗑️ Borrar</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // MODO EDICIÓN
+    window.startEdit = function(id) {
+      const item = inventoryState.find(i => i.id === id);
+      if (!item) return;
+
+      isEditing = true;
+      editIdInput.value = item.id;
+      skuInput.value = item.sku;
+      nombreInput.value = item.nombre;
+      stockInput.value = item.stock;
+      precioInput.value = item.precio;
+
+      // Actualizar UI del formulario
+      smartFormCard.classList.add('editing');
+      formModeBadge.className = 'form-header-badge badge-edit-mode';
+      formModeBadge.textContent = `✏️ Editando Producto #${item.id}`;
+      btnSubmitForm.textContent = '💾 Guardar Cambios (PUT)';
+      btnSubmitForm.className = 'btn btn-primary';
+      btnCancelEdit.style.display = 'inline-flex';
+
+      renderTable();
+      nombreInput.focus();
+    };
+
+    // CANCELAR EDICIÓN (Volver a Crear)
+    function cancelEdit() {
+      isEditing = false;
+      itemForm.reset();
+      editIdInput.value = '';
+
+      smartFormCard.classList.remove('editing');
+      formModeBadge.className = 'form-header-badge badge-create-mode';
+      formModeBadge.textContent = 'Modo: Nuevo Producto';
+      btnSubmitForm.textContent = '➕ Guardar Producto (POST)';
+      btnSubmitForm.className = 'btn btn-primary';
+      btnCancelEdit.style.display = 'none';
+
+      renderTable();
+    }
+    btnCancelEdit.addEventListener('click', cancelEdit);
+
+    // SUBMIT FORMULARIO (Maneja POST o PUT sin duplicidad)
+    itemForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        sku: skuInput.value.trim(),
+        nombre: nombreInput.value.trim(),
+        stock: Number(stockInput.value),
+        precio: Number(precioInput.value)
+      };
+
+      const url = isEditing ? `/api/items/${editIdInput.value}` : '/api/items';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        displayHttpResponse(method, url, res.status, data);
+
+        if (res.ok) {
+          showToast(data.mensaje || data.message || 'Operación exitosa', 'success');
+          cancelEdit();
+        } else {
+          const detail = data.detalles && data.detalles.length ? `: ${data.detalles.join(', ')}` : '';
+          showToast(`[${res.status}] ${data.mensaje || data.message}${detail}`, 'error');
+        }
+      } catch (err) {
+        showToast('Error de conexión: ' + err.message, 'error');
+      }
+    });
+
+    // ELIMINAR PRODUCTO (DELETE)
+    window.deleteItem = async function(id, nombre) {
+      if (!confirm(`¿Estás seguro de que deseas eliminar "${nombre}" (#${id})?`)) return;
+
+      try {
+        const res = await fetch(`/api/items/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        displayHttpResponse('DELETE', `/api/items/${id}`, res.status, data);
+
+        if (res.ok) {
+          showToast(`Producto #${id} eliminado correctamente`, 'success');
+          if (isEditing && editIdInput.value == id) {
+            cancelEdit();
+          }
+        } else {
+          showToast(`Error al eliminar: ${data.mensaje || data.message}`, 'error');
+        }
+      } catch (err) {
+        showToast('Error de conexión: ' + err.message, 'error');
+      }
+    };
+
+    // PRUEBAS DE RÚBRICA: ERROR 400
+    btnTest400.addEventListener('click', async () => {
+      const payloadInvalido = { sku: '', nombre: 'A', stock: -5, precio: 0 };
+      try {
+        const res = await fetch('/api/items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payloadInvalido)
+        });
+        const data = await res.json();
+        displayHttpResponse('POST', '/api/items [TEST 400]', res.status, data);
+        showToast('Error 400 capturado correctamente (Validaciones funcionando)', 'warning');
+      } catch (err) {
+        showToast('Error de red: ' + err.message, 'error');
+      }
+    });
+
+    // PRUEBAS DE RÚBRICA: CONFLICTO 409
+    btnTest409.addEventListener('click', async () => {
+      const fixedSku = 'SKU-DUP-RUBRICA';
+      const payload = { sku: fixedSku, nombre: 'Producto de Prueba Conflicto', stock: 10, precio: 50.0 };
+
+      // 1. Asegurar primer registro
+      await fetch('/api/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      // 2. Duplicar para forzar el conflicto 409
+      try {
+        const res = await fetch('/api/items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        displayHttpResponse('POST', '/api/items [TEST 409]', res.status, data);
+        showToast('Conflicto 409 detectado: SKU Duplicado capturado en SQLite', 'error');
+      } catch (err) {
+        showToast('Error de red: ' + err.message, 'error');
+      }
+    });
+
+    // CARGAR 3 PRODUCTOS DEMO
+    btnSeed.addEventListener('click', async () => {
+      const demos = [
+        { sku: 'MON-4K-' + Math.floor(Math.random()*900+100), nombre: 'Monitor 4K IPS HDR', stock: 14, precio: 349.99 },
+        { sku: 'TEC-MEC-' + Math.floor(Math.random()*900+100), nombre: 'Teclado Mecánico Inalámbrico', stock: 22, precio: 79.50 },
+        { sku: 'RAT-GAM-' + Math.floor(Math.random()*900+100), nombre: 'Mouse Óptico 16000 DPI', stock: 35, precio: 39.90 }
+      ];
+
+      for (const d of demos) {
+        await fetch('/api/items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(d)
+        });
+      }
+      showToast('3 productos de demostración insertados con éxito', 'success');
+    });
+
+    // WEBSOCKETS (SOCKET.IO)
+    socket.on('connect', () => {
+      socketDot.className = 'status-dot connected';
+      socketStatus.textContent = `En línea (${socket.id.substring(0, 8)}...)`;
+      loadInventory();
+    });
+
+    socket.on('disconnect', () => {
+      socketDot.className = 'status-dot disconnected';
+      socketStatus.textContent = 'Desconectado';
+    });
+
+    socket.on('inventario:cambio', (payload) => {
+      if (eventsEmpty) eventsEmpty.style.display = 'none';
+
+      eventCounter += 1;
+      statTotalEvents.textContent = eventCounter;
+
+      const accion = payload.accion || payload.action || 'CAMBIO';
+      const item = payload.item || {};
+      const dateStr = new Date(payload.timestamp).toLocaleTimeString();
+
+      const li = document.createElement('li');
+      li.className = `event-card ${accion}`;
+      li.innerHTML = `
+        <div class="event-header">
+          <span class="event-badge badge-${accion}">${accion}</span>
+          <span class="event-time">${dateStr}</span>
+        </div>
+        <div class="event-body">
+          <div><span style="color:var(--text-dim)">ID:</span> #${item.id || 'N/A'}</div>
+          <div><span style="color:var(--text-dim)">SKU:</span> ${item.sku || 'N/A'}</div>
+          <div><span style="color:var(--text-dim)">Stock:</span> ${item.stock ?? 0} uds.</div>
+          <div><span style="color:var(--text-dim)">Precio:</span> $${Number(item.precio || 0).toFixed(2)}</div>
+        </div>
+      `;
+
+      eventsList.prepend(li);
+      // Auto-actualizar inventario y KPIs
+      loadInventory();
+    });
+
+    // BOTONES AUXILIARES
+    btnRefreshData.addEventListener('click', () => {
+      loadInventory();
+      showToast('Inventario actualizado desde la base de datos', 'info');
+    });
+
+    btnClearEvents.addEventListener('click', () => {
+      eventsList.innerHTML = '';
+      eventsEmpty.style.display = 'block';
+      eventCounter = 0;
+      statTotalEvents.textContent = '0';
+      showToast('Registro de eventos en vivo limpiado', 'info');
+    });
+
+    searchInput.addEventListener('input', renderTable);
+  </script>
+</body>
+</html>
